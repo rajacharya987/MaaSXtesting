@@ -1,101 +1,476 @@
-const { DatabaseSync } = require('node:sqlite');
+const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const dbPath = path.join(__dirname, '..', 'datafinder.db');
-const db = new DatabaseSync(dbPath);
+let db = null;
+let isNativeSqlite = false;
 
-// Enable WAL mode for better concurrency and performance
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
+// 1. Try loading native node:sqlite (available in Node.js >= 22.5.0)
+try {
+  const { DatabaseSync } = require('node:sqlite');
+  const dbPath = path.join(__dirname, '..', 'datafinder.db');
+  db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode = WAL;');
+  db.exec('PRAGMA foreign_keys = ON;');
+  isNativeSqlite = true;
+  console.log('✅ Connected to native Node SQLite engine.');
+} catch (err) {
+  console.log('ℹ️  node:sqlite not present (Node < 22). Initializing Universal Pure-JS Engine...');
+}
+
+// 2. Universal Embedded Fallback Database (Works on Node 16/18/20/22 with zero native build deps)
+if (!db) {
+  const jsonDbPath = path.join(__dirname, '..', 'datafinder_store.json');
+
+  const defaultState = {
+    users: [],
+    leads: [],
+    saved_leads: [],
+    api_keys: [],
+    activity_logs: [],
+    _sequences: { users: 0, leads: 0, saved_leads: 0, api_keys: 0, activity_logs: 0 }
+  };
+
+  let store = defaultState;
+  if (fs.existsSync(jsonDbPath)) {
+    try {
+      store = JSON.parse(fs.readFileSync(jsonDbPath, 'utf8'));
+    } catch (e) {
+      store = defaultState;
+    }
+  }
+
+  function persist() {
+    try {
+      fs.writeFileSync(jsonDbPath, JSON.stringify(store, null, 2), 'utf8');
+    } catch (e) {
+      console.error('Failed to persist store:', e);
+    }
+  }
+
+  db = {
+    exec(sql) {
+      // DDL or PRAGMAs are no-ops in memory/json store
+      return this;
+    },
+
+    prepare(rawSql) {
+      const sql = rawSql.trim();
+
+      return {
+        run(...params) {
+          // --- INSERT INTO users ---
+          if (/INSERT\s+INTO\s+users/i.test(sql)) {
+            const [email, password, full_name, company, plan, credits, role] = params;
+            store._sequences.users = (store._sequences.users || 0) + 1;
+            const id = store._sequences.users;
+            const newUser = {
+              id,
+              email,
+              password,
+              full_name,
+              company: company || 'Independent',
+              plan: plan || 'Starter',
+              credits: credits !== undefined ? credits : 500,
+              role: role || 'user',
+              created_at: new Date().toISOString()
+            };
+            store.users.push(newUser);
+            persist();
+            return { lastInsertRowid: id, changes: 1 };
+          }
+
+          // --- INSERT INTO leads ---
+          if (/INSERT\s+INTO\s+leads/i.test(sql)) {
+            store._sequences.leads = (store._sequences.leads || 0) + 1;
+            const id = store._sequences.leads;
+            const [
+              company_name, domain, industry, employees, revenue_range,
+              country, city, contact_name, contact_title, contact_email,
+              contact_phone, tech_stack, funding_stage, verified
+            ] = params;
+
+            const newLead = {
+              id, company_name, domain, industry,
+              employees: Number(employees), revenue_range,
+              country, city, contact_name, contact_title, contact_email,
+              contact_phone, tech_stack, funding_stage,
+              verified: verified !== undefined ? verified : 1,
+              created_at: new Date().toISOString()
+            };
+            store.leads.push(newLead);
+            persist();
+            return { lastInsertRowid: id, changes: 1 };
+          }
+
+          // --- INSERT INTO saved_leads ---
+          if (/INSERT\s+INTO\s+saved_leads/i.test(sql)) {
+            store._sequences.saved_leads = (store._sequences.saved_leads || 0) + 1;
+            const id = store._sequences.saved_leads;
+            const [user_id, lead_id, notes] = params;
+            store.saved_leads.push({
+              id,
+              user_id: Number(user_id),
+              lead_id: Number(lead_id),
+              notes: notes || '',
+              saved_at: new Date().toISOString()
+            });
+            persist();
+            return { lastInsertRowid: id, changes: 1 };
+          }
+
+          // --- INSERT INTO api_keys ---
+          if (/INSERT\s+INTO\s+api_keys/i.test(sql)) {
+            store._sequences.api_keys = (store._sequences.api_keys || 0) + 1;
+            const id = store._sequences.api_keys;
+            const [user_id, key_name, api_key, requests_count, rate_limit] = params;
+            const keyObj = {
+              id,
+              user_id: Number(user_id),
+              key_name,
+              api_key,
+              requests_count: requests_count || 0,
+              rate_limit: rate_limit || 5000,
+              status: 'active',
+              created_at: new Date().toISOString(),
+              last_used: null
+            };
+            store.api_keys.push(keyObj);
+            persist();
+            return { lastInsertRowid: id, changes: 1 };
+          }
+
+          // --- INSERT INTO activity_logs ---
+          if (/INSERT\s+INTO\s+activity_logs/i.test(sql)) {
+            store._sequences.activity_logs = (store._sequences.activity_logs || 0) + 1;
+            const id = store._sequences.activity_logs;
+            const [user_id, action, details] = params;
+            store.activity_logs.push({
+              id,
+              user_id: user_id ? Number(user_id) : null,
+              action,
+              details,
+              ip_address: '127.0.0.1',
+              created_at: new Date().toISOString()
+            });
+            persist();
+            return { lastInsertRowid: id, changes: 1 };
+          }
+
+          // --- UPDATE users SET full_name = ?, company = ? WHERE id = ? ---
+          if (/UPDATE\s+users\s+SET\s+full_name\s*=\s*\?,\s*company\s*=\s*\?\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const [full_name, company, id] = params;
+            const u = store.users.find(x => x.id === Number(id));
+            if (u) {
+              u.full_name = full_name;
+              u.company = company;
+              persist();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
+
+          // --- UPDATE users SET plan = ?, credits = credits + ? WHERE id = ? ---
+          if (/UPDATE\s+users\s+SET\s+plan\s*=\s*\?,\s*credits\s*=\s*credits\s*\+\s*\?\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const [plan, bonus, id] = params;
+            const u = store.users.find(x => x.id === Number(id));
+            if (u) {
+              u.plan = plan;
+              u.credits = (u.credits || 0) + Number(bonus);
+              persist();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
+
+          // --- UPDATE users SET credits = credits - ? WHERE id = ? ---
+          if (/UPDATE\s+users\s+SET\s+credits\s*=\s*credits\s*-\s*\?\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const [cost, id] = params;
+            const u = store.users.find(x => x.id === Number(id));
+            if (u) {
+              u.credits = Math.max(0, (u.credits || 0) - Number(cost));
+              persist();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
+
+          // --- DELETE FROM saved_leads WHERE id = ? ---
+          if (/DELETE\s+FROM\s+saved_leads\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const [id] = params;
+            const before = store.saved_leads.length;
+            store.saved_leads = store.saved_leads.filter(x => x.id !== Number(id));
+            persist();
+            return { changes: before - store.saved_leads.length };
+          }
+
+          // --- DELETE FROM api_keys WHERE id = ? ---
+          if (/DELETE\s+FROM\s+api_keys\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const [id] = params;
+            const before = store.api_keys.length;
+            store.api_keys = store.api_keys.filter(x => x.id !== Number(id));
+            persist();
+            return { changes: before - store.api_keys.length };
+          }
+
+          return { changes: 0 };
+        },
+
+        get(...params) {
+          // --- COUNT queries ---
+          if (/SELECT\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+users/i.test(sql)) {
+            return { count: store.users.length };
+          }
+          if (/SELECT\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+leads/i.test(sql)) {
+            return { count: store.leads.length };
+          }
+          if (/SELECT\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+saved_leads\s+WHERE\s+user_id\s*=\s*\?/i.test(sql)) {
+            const uid = Number(params[0]);
+            return { count: store.saved_leads.filter(x => x.user_id === uid).length };
+          }
+          if (/SELECT\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+api_keys\s+WHERE\s+user_id\s*=\s*\?/i.test(sql)) {
+            const uid = Number(params[0]);
+            return { count: store.api_keys.filter(x => x.user_id === uid).length };
+          }
+
+          // --- SELECT user by email ---
+          if (/FROM\s+users\s+WHERE\s+LOWER\(email\)\s*=\s*LOWER\(\?\)/i.test(sql)) {
+            const email = String(params[0]).toLowerCase();
+            return store.users.find(u => u.email.toLowerCase() === email);
+          }
+
+          // --- SELECT user by ID ---
+          if (/FROM\s+users\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const id = Number(params[0]);
+            return store.users.find(u => u.id === id);
+          }
+
+          // --- SELECT credits FROM users WHERE id = ? ---
+          if (/SELECT\s+credits\s+FROM\s+users\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const id = Number(params[0]);
+            const u = store.users.find(x => x.id === id);
+            return u ? { credits: u.credits } : undefined;
+          }
+
+          // --- SELECT saved_leads by user_id and lead_id ---
+          if (/FROM\s+saved_leads\s+WHERE\s+user_id\s*=\s*\?\s+AND\s+lead_id\s*=\s*\?/i.test(sql)) {
+            const [uid, lid] = params;
+            return store.saved_leads.find(x => x.user_id === Number(uid) && x.lead_id === Number(lid));
+          }
+
+          // --- SELECT api_key by id ---
+          if (/FROM\s+api_keys\s+WHERE\s+id\s*=\s*\?/i.test(sql)) {
+            const id = Number(params[0]);
+            return store.api_keys.find(x => x.id === id);
+          }
+
+          return undefined;
+        },
+
+        all(...params) {
+          // --- SELECT DISTINCT industry FROM leads ---
+          if (/SELECT\s+DISTINCT\s+industry\s+FROM\s+leads/i.test(sql)) {
+            const set = [...new Set(store.leads.map(l => l.industry))].sort();
+            return set.map(industry => ({ industry }));
+          }
+
+          // --- SELECT DISTINCT country FROM leads ---
+          if (/SELECT\s+DISTINCT\s+country\s+FROM\s+leads/i.test(sql)) {
+            const set = [...new Set(store.leads.map(l => l.country))].sort();
+            return set.map(country => ({ country }));
+          }
+
+          // --- Industry breakdown aggregation ---
+          if (/SELECT\s+industry,\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+leads/i.test(sql)) {
+            const map = {};
+            for (const l of store.leads) {
+              map[l.industry] = (map[l.industry] || 0) + 1;
+            }
+            return Object.entries(map)
+              .map(([industry, count]) => ({ industry, count }))
+              .sort((a, b) => b.count - a.count)
+              .slice(0, 5);
+          }
+
+          // --- SELECT api_keys WHERE user_id = ? ---
+          if (/FROM\s+api_keys\s+WHERE\s+user_id\s*=\s*\?/i.test(sql)) {
+            const uid = Number(params[0]);
+            return store.api_keys.filter(k => k.user_id === uid).reverse();
+          }
+
+          // --- SELECT activity_logs WHERE user_id = ? ---
+          if (/FROM\s+activity_logs\s+WHERE\s+user_id\s*=\s*\?/i.test(sql)) {
+            const uid = Number(params[0]);
+            return store.activity_logs.filter(a => a.user_id === uid).slice(-8).reverse();
+          }
+
+          // --- SELECT saved_leads joined with leads ---
+          if (/FROM\s+saved_leads/i.test(sql) && /JOIN\s+leads/i.test(sql)) {
+            const uid = Number(params[0]);
+            const userSaves = store.saved_leads.filter(s => s.user_id === uid);
+            const results = [];
+            for (const s of userSaves) {
+              const lead = store.leads.find(l => l.id === s.lead_id);
+              if (lead) {
+                results.push({
+                  ...lead,
+                  saved_at: s.saved_at,
+                  notes: s.notes,
+                  is_saved: 1
+                });
+              }
+            }
+            return results.reverse();
+          }
+
+          // --- SELECT * FROM leads WHERE id IN (...) ---
+          if (/SELECT\s+\*\s+FROM\s+leads\s+WHERE\s+id\s+IN/i.test(sql)) {
+            const ids = params.map(Number);
+            return store.leads.filter(l => ids.includes(l.id));
+          }
+
+          // --- Lead Finder Query Engine (Complex WHERE filters) ---
+          if (/FROM\s+leads\s+l/i.test(sql)) {
+            const userId = Number(params[0]);
+            const userSavedSet = new Set(store.saved_leads.filter(s => s.user_id === userId).map(s => s.lead_id));
+            let results = store.leads.map(l => ({
+              ...l,
+              is_saved: userSavedSet.has(l.id) ? 1 : 0
+            }));
+
+            // Check if query parameter exists
+            if (sql.includes('l.company_name LIKE ?')) {
+              // The search string was pushed 5 times for (company, domain, contact, title, tech)
+              const q = String(params[1]).replace(/%/g, '').toLowerCase();
+              results = results.filter(l =>
+                (l.company_name && l.company_name.toLowerCase().includes(q)) ||
+                (l.domain && l.domain.toLowerCase().includes(q)) ||
+                (l.contact_name && l.contact_name.toLowerCase().includes(q)) ||
+                (l.contact_title && l.contact_title.toLowerCase().includes(q)) ||
+                (l.tech_stack && l.tech_stack.toLowerCase().includes(q))
+              );
+            }
+
+            // Industry filter
+            const indMatch = sql.match(/l\.industry\s*=\s*\?/);
+            if (indMatch) {
+              // Find index of industry param
+              const indVal = params.find(p => typeof p === 'string' && store.leads.some(l => l.industry === p));
+              if (indVal) {
+                results = results.filter(l => l.industry === indVal);
+              }
+            }
+
+            // Country filter
+            const cntMatch = sql.match(/l\.country\s*=\s*\?/);
+            if (cntMatch) {
+              const cntVal = params.find(p => typeof p === 'string' && store.leads.some(l => l.country === p));
+              if (cntVal) {
+                results = results.filter(l => l.country === cntVal);
+              }
+            }
+
+            // Employee filter
+            const empMatch = sql.match(/l\.employees\s*>=\s*\?/);
+            if (empMatch) {
+              const empVal = params.find(p => typeof p === 'number');
+              if (empVal) {
+                results = results.filter(l => l.employees >= empVal);
+              }
+            }
+
+            // Sort
+            if (sql.includes('ORDER BY l.employees DESC')) {
+              results.sort((a, b) => b.employees - a.employees);
+            } else if (sql.includes('ORDER BY l.company_name ASC')) {
+              results.sort((a, b) => a.company_name.localeCompare(b.company_name));
+            } else {
+              results.sort((a, b) => a.id - b.id);
+            }
+
+            return results;
+          }
+
+          return [];
+        }
+      };
+    }
+  };
+}
 
 function initDatabase() {
-  // 1. Users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      full_name TEXT NOT NULL,
-      company TEXT,
-      plan TEXT DEFAULT 'Starter',
-      credits INTEGER DEFAULT 500,
-      role TEXT DEFAULT 'user',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // 2. Leads table (B2B SaaS intelligence dataset)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS leads (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_name TEXT NOT NULL,
-      domain TEXT NOT NULL,
-      industry TEXT NOT NULL,
-      employees INTEGER DEFAULT 50,
-      revenue_range TEXT,
-      country TEXT NOT NULL,
-      city TEXT NOT NULL,
-      contact_name TEXT NOT NULL,
-      contact_title TEXT NOT NULL,
-      contact_email TEXT NOT NULL,
-      contact_phone TEXT,
-      tech_stack TEXT,
-      funding_stage TEXT,
-      verified INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // 3. Saved / Bookmarked leads
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS saved_leads (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      lead_id INTEGER NOT NULL,
-      saved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      notes TEXT,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE,
-      UNIQUE(user_id, lead_id)
-    );
-  `);
-
-  // 4. API Keys
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS api_keys (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      key_name TEXT NOT NULL,
-      api_key TEXT UNIQUE NOT NULL,
-      requests_count INTEGER DEFAULT 0,
-      rate_limit INTEGER DEFAULT 1000,
-      status TEXT DEFAULT 'active',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_used DATETIME,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-  `);
-
-  // 5. Activity Audit Logs
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS activity_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
-      action TEXT NOT NULL,
-      details TEXT,
-      ip_address TEXT DEFAULT '127.0.0.1',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
-    );
-  `);
+  if (isNativeSqlite) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        company TEXT,
+        plan TEXT DEFAULT 'Starter',
+        credits INTEGER DEFAULT 500,
+        role TEXT DEFAULT 'user',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_name TEXT NOT NULL,
+        domain TEXT NOT NULL,
+        industry TEXT NOT NULL,
+        employees INTEGER DEFAULT 50,
+        revenue_range TEXT,
+        country TEXT NOT NULL,
+        city TEXT NOT NULL,
+        contact_name TEXT NOT NULL,
+        contact_title TEXT NOT NULL,
+        contact_email TEXT NOT NULL,
+        contact_phone TEXT,
+        tech_stack TEXT,
+        funding_stage TEXT,
+        verified INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS saved_leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        lead_id INTEGER NOT NULL,
+        saved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        notes TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+        UNIQUE(user_id, lead_id)
+      );
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        key_name TEXT NOT NULL,
+        api_key TEXT UNIQUE NOT NULL,
+        requests_count INTEGER DEFAULT 0,
+        rate_limit INTEGER DEFAULT 1000,
+        status TEXT DEFAULT 'active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_used DATETIME,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        action TEXT NOT NULL,
+        details TEXT,
+        ip_address TEXT DEFAULT '127.0.0.1',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+      );
+    `);
+  }
 
   seedData();
 }
 
 function seedData() {
-  // Check if users exist
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+  const userCheck = db.prepare('SELECT COUNT(*) as count FROM users').get();
+  const userCount = userCheck ? userCheck.count : 0;
+
   if (userCount === 0) {
     const salt = bcrypt.genSaltSync(10);
     const demoPassword = bcrypt.hashSync('demo123', salt);
@@ -109,7 +484,6 @@ function seedData() {
     insertUser.run('demo@datafinder.io', demoPassword, 'Sarah Jenkins', 'Apex Cloud Labs', 'Pro', 4850, 'user');
     insertUser.run('admin@datafinder.io', adminPassword, 'Alex Vance', 'DataFinder HQ', 'Enterprise', 99999, 'admin');
 
-    // Create an initial API key for demo user
     const insertApiKey = db.prepare(`
       INSERT INTO api_keys (user_id, key_name, api_key, requests_count, rate_limit)
       VALUES (?, ?, ?, ?, ?)
@@ -117,7 +491,6 @@ function seedData() {
     insertApiKey.run(1, 'Production Webhooks', 'df_live_948f2a1b73e46c8d0e5271a3bc89', 342, 5000);
     insertApiKey.run(1, 'Staging Scraper API', 'df_test_302d9c4f1a8e6b7c5d01248ef3a7', 48, 1000);
 
-    // Initial activity log
     const insertLog = db.prepare(`
       INSERT INTO activity_logs (user_id, action, details)
       VALUES (?, ?, ?)
@@ -126,8 +499,9 @@ function seedData() {
     insertLog.run(1, 'API_KEY_CREATED', 'Created key Production Webhooks');
   }
 
-  // Check if leads exist
-  const leadsCount = db.prepare('SELECT COUNT(*) as count FROM leads').get().count;
+  const leadsCheck = db.prepare('SELECT COUNT(*) as count FROM leads').get();
+  const leadsCount = leadsCheck ? leadsCheck.count : 0;
+
   if (leadsCount === 0) {
     const seedLeads = [
       {
@@ -340,7 +714,6 @@ function seedData() {
       );
     }
 
-    // Bookmark first two leads for the demo user
     const saveLead = db.prepare(`
       INSERT INTO saved_leads (user_id, lead_id, notes) VALUES (?, ?, ?)
     `);
