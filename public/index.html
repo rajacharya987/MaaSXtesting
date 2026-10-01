@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataFinder | B2B Intelligence & Precision Lead Discovery Platform</title>
+  <meta name="description" content="DataFinder empowers growth teams with verified B2B intelligence, decision-maker direct dials, tech stack forensics, and high-speed enrichment APIs.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+  <!-- Ambient Light Accents -->
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-secondary"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ========================================================================
+       SECTION A: LANDING PAGE (Visible to Guests)
+       ======================================================================== -->
+  <div id="landing-view">
+    <!-- Navigation Bar -->
+    <header class="header">
+      <div class="container nav-container">
+        <div class="brand-logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+          <div class="logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <span>Data<span class="text-accent-gradient">Finder</span></span>
+          <span class="logo-badge">v2.4</span>
+        </div>
+
+        <ul class="nav-links">
+          <li><a href="#features" class="nav-link">Intelligence</a></li>
+          <li><a href="#calculator" class="nav-link">ROI Calculator</a></li>
+          <li><a href="#pricing" class="nav-link">Pricing Plans</a></li>
+          <li><a href="#faq" class="nav-link">Security & FAQ</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <button class="btn btn-outline btn-sm" onclick="App.openModal('auth-modal')">Sign In</button>
+          <button class="btn btn-primary btn-sm btn-instant-demo">⚡ Try Live Demo</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
+        <div class="hero-pill">
+          <span>⚡ Live Database v2.4</span>
+          <span>•</span>
+          <span>Over 40,000+ Enriched B2B Accounts</span>
+        </div>
+
+        <h1 class="hero-title">
+          Uncover <span class="text-gradient">high-intent leads</span> before your competitors do.
+        </h1>
+
+        <p class="hero-subtitle">
+          Real-time company intelligence, verified decision-maker emails, and developer-first enrichment APIs built to scale modern revenue engines.
+        </p>
+
+        <div class="hero-cta-group">
+          <button class="btn btn-primary btn-lg btn-instant-demo">
+            <span>⚡ Launch Instant Demo</span>
+            <span style="font-size: 0.8em; opacity: 0.8;">(No Card Required)</span>
+          </button>
+          <button class="btn btn-secondary btn-lg" onclick="App.openModal('auth-modal')">
+            Create Free Account ↗
+          </button>
+        </div>
+
+        <div class="trust-badges">
+          <div class="trust-item">
+            <span>🛡️</span>
+            <span><strong>99.4%</strong> Email Deliverability</span>
+          </div>
+          <div class="trust-item">
+            <span>⚡</span>
+            <span><strong>150ms</strong> API Latency</span>
+          </div>
+          <div class="trust-item">
+            <span>🏢</span>
+            <span><strong>2,500+</strong> Tech Stacks Indexed</span>
+          </div>
+          <div class="trust-item">
+            <span>🔒</span>
+            <span><strong>SOC2 & GDPR</strong> Compliant</span>
+          </div>
+        </div>
+
+        <!-- Interactive Preview Box -->
+        <div class="preview-card-wrapper">
+          <div class="preview-card-glow"></div>
+          <div class="preview-card">
+            <div class="preview-header">
+              <div class="preview-dots">
+                <span class="preview-dot dot-red"></span>
+                <span class="preview-dot dot-yellow"></span>
+                <span class="preview-dot dot-green"></span>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-dim); font-family: monospace;">
+                datafinder.io/app/search
+              </div>
+              <span class="preview-badge-status">● Live Database Connected</span>
+            </div>
+            <div class="preview-body">
+              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <input type="text" id="landing-preview-search" class="form-input" placeholder="Try searching: 'FinTech', 'VP', 'Cloud'..." style="font-size: 0.9rem;">
+                <button class="btn btn-primary btn-sm btn-instant-demo">Explore Full App</button>
+              </div>
+              <div id="landing-preview-rows"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-badge">Precision Data Layer</span>
+          <h2 class="section-title">Everything you need to close more pipeline</h2>
+          <p class="section-subtitle">Stop wasting SDR hours on manual prospecting and invalid email bounces.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Deep Tech Stack Forensics</h3>
+            <p>Know exactly which cloud providers, databases, and SaaS tools your target accounts deploy before you even pick up the phone.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3>Zero-Bounce Guarantee</h3>
+            <p>Every decision maker's email address is validated against SMTP handshake and DNS records with 99.4% deliverability assurance.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Developer REST & Webhooks</h3>
+            <p>Integrate our high-throughput JSON API directly into your backend, CRM, or outbound workflows with customizable rate limits.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Revenue & Growth Signals</h3>
+            <p>Track funding rounds, employee headcount growth, and expansion milestones to engage prospects at their exact inflection moment.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📥</div>
+            <h3>1-Click CSV / JSON Export</h3>
+            <p>Download clean, deduplicated prospect lists formatted perfectly for Apollo, HubSpot, Salesforce, or your custom internal tools.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <h3>Enterprise Role Security</h3>
+            <p>Token management, scoped API keys, audit logs, and GDPR-compliant automated privacy controls out of the box.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive ROI Calculator Section -->
+    <section id="calculator" class="features-section" style="padding-top: 20px;">
+      <div class="container">
+        <div class="dash-panel" style="max-width: 900px; margin: 0 auto; padding: 40px; background: linear-gradient(180deg, rgba(22, 30, 49, 0.9) 0%, rgba(12, 16, 26, 0.95) 100%);">
+          <div class="section-header" style="margin-bottom: 30px;">
+            <span class="section-badge">ROI & Time Savings</span>
+            <h2 style="font-size: 2rem;">Calculate Your Team's Monthly Savings</h2>
+            <p class="section-subtitle">See how much manual prospecting time and SDR payroll DataFinder eliminates.</p>
+          </div>
+
+          <div style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 10px;">
+              <span>Monthly Target Prospects:</span>
+              <span id="calc-leads-val" style="color: var(--accent); font-size: 1.2rem;">500</span>
+            </div>
+            <input type="range" id="calc-leads-slider" min="100" max="5000" step="50" value="500" style="width: 100%; accent-color: var(--primary); cursor: pointer;">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center;">
+            <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase;">Manual Hours Saved</div>
+              <div id="calc-hours-val" style="font-size: 2.2rem; font-weight: 800; color: var(--primary-light); margin-top: 4px;">150 hrs/mo</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase;">Estimated Cost Reduction</div>
+              <div id="calc-dollars-val" style="font-size: 2.2rem; font-weight: 800; color: var(--success); margin-top: 4px;">$6,750</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-badge">Predictable Pricing</span>
+          <h2 class="section-title">Transparent plans for every growth stage</h2>
+          <p class="section-subtitle">No hidden contracts. Upgrade, downgrade, or cancel at any time.</p>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Starter -->
+          <div class="pricing-card">
+            <h3 class="plan-title">Starter</h3>
+            <p class="plan-desc">For individual founders and solo sales reps.</p>
+            <div class="plan-price">
+              <span>$49</span>
+              <span class="plan-period">/ month</span>
+            </div>
+            <ul class="plan-features">
+              <li class="plan-feature-item"><span class="check">✓</span> 500 Credits per month</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Search all 40,000+ records</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Standard CSV Exports</li>
+              <li class="plan-feature-item"><span class="check">✓</span> 1 Developer API Key</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Community Support</li>
+            </ul>
+            <button class="btn btn-outline" onclick="App.openModal('auth-modal')">Get Started</button>
+          </div>
+
+          <!-- Pro (Featured) -->
+          <div class="pricing-card featured">
+            <div class="popular-tag">Most Popular</div>
+            <h3 class="plan-title">Pro Intelligence</h3>
+            <p class="plan-desc">For high-velocity outbound teams and SDR squads.</p>
+            <div class="plan-price">
+              <span>$149</span>
+              <span class="plan-period">/ month</span>
+            </div>
+            <ul class="plan-features">
+              <li class="plan-feature-item"><span class="check">✓</span> <strong>5,000 Credits</strong> per month</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Tech Stack Forensics & Signals</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Unlimited CSV & JSON Exports</li>
+              <li class="plan-feature-item"><span class="check">✓</span> 5 High-Speed API Keys</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Priority Slack & Email Support</li>
+            </ul>
+            <button class="btn btn-primary btn-instant-demo">Start Pro Demo</button>
+          </div>
+
+          <!-- Enterprise -->
+          <div class="pricing-card">
+            <h3 class="plan-title">Enterprise</h3>
+            <p class="plan-desc">For large revenue engines requiring dedicated pipelines.</p>
+            <div class="plan-price">
+              <span>$499</span>
+              <span class="plan-period">/ month</span>
+            </div>
+            <ul class="plan-features">
+              <li class="plan-feature-item"><span class="check">✓</span> <strong>25,000 Credits</strong> per month</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Custom Webhook Integrations</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Unlimited Team Members</li>
+              <li class="plan-feature-item"><span class="check">✓</span> Dedicated Account Manager</li>
+              <li class="plan-feature-item"><span class="check">✓</span> 99.9% Uptime SLA</li>
+            </ul>
+            <button class="btn btn-outline" onclick="App.openModal('auth-modal')">Contact Enterprise</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="features-section">
+      <div class="container" style="max-width: 850px;">
+        <div class="section-header">
+          <span class="section-badge">Frequently Asked</span>
+          <h2 class="section-title">Answers to common questions</h2>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="dash-panel" style="padding: 20px;">
+            <h4 style="margin-bottom: 8px;">How does DataFinder ensure 99.4% email accuracy?</h4>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              We run real-time DNS MX record lookups, disposable domain detection, and direct SMTP mailbox handshakes without sending test emails to guarantee zero spam triggers.
+            </p>
+          </div>
+          <div class="dash-panel" style="padding: 20px;">
+            <h4 style="margin-bottom: 8px;">Can I run DataFinder on my local machine?</h4>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              Yes! The system includes an automated 1-click launcher (<code>./launcher.sh</code>, <code>launcher.bat</code>, or <code>launcher.ps1</code>) that installs dependencies, provisions the local SQLite database, and serves everything on <code>http://localhost:3000</code>.
+            </p>
+          </div>
+          <div class="dash-panel" style="padding: 20px;">
+            <h4 style="margin-bottom: 8px;">What happens when I run out of credits?</h4>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              You can instantly upgrade your subscription inside the dashboard or top up credits with one click without losing any saved leads or configured API keys.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-col">
+            <div class="brand-logo" style="margin-bottom: 16px;">
+              <div class="logo-icon" style="width: 32px; height: 32px;">⚡</div>
+              <span>DataFinder</span>
+            </div>
+            <p style="color: var(--text-dim); max-width: 300px; font-size: 0.88rem;">
+              Next-generation B2B intelligence engine and precision lead discovery platform.
+            </p>
+          </div>
+          <div class="footer-col">
+            <h4>Product</h4>
+            <ul class="footer-links">
+              <li><a href="#features" class="footer-link">Lead Search</a></li>
+              <li><a href="#features" class="footer-link">Tech Forensics</a></li>
+              <li><a href="#pricing" class="footer-link">Pricing</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Developers</h4>
+            <ul class="footer-links">
+              <li><a href="#" class="footer-link btn-instant-demo">REST API Docs</a></li>
+              <li><a href="#" class="footer-link btn-instant-demo">Webhooks</a></li>
+              <li><a href="#" class="footer-link">Security Whitepaper</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <ul class="footer-links">
+              <li><a href="#" class="footer-link">Privacy Policy</a></li>
+              <li><a href="#" class="footer-link">Terms of Service</a></li>
+              <li><a href="#" class="footer-link">System Status</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>© 2026 DataFinder Technologies Inc. All rights reserved.</div>
+          <div style="display: flex; gap: 20px;">
+            <span>Hosted locally on Node.js & SQLite</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================================================
+       SECTION B: SAAS APP DASHBOARD (Visible when logged in)
+       ======================================================================== -->
+  <div id="app-view-container" class="app-layout" style="display: none;">
+    <!-- Left Navigation Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon" style="width: 32px; height: 32px;">⚡</div>
+        <span style="font-family: var(--font-heading); font-weight: 800; font-size: 1.2rem;">DataFinder</span>
+      </div>
+
+      <div class="workspace-badge">
+        <span class="workspace-dot"></span>
+        <span id="workspace-name" style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Apex Cloud Labs</span>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="menu-section-label">Intelligence</li>
+        <li class="menu-item active" data-view="overview" onclick="App.switchView('overview')">
+          <span class="menu-icon">📊</span>
+          <span class="menu-text">Overview</span>
+        </li>
+        <li class="menu-item" data-view="leads" onclick="App.switchView('leads')">
+          <span class="menu-icon">🔍</span>
+          <span class="menu-text">Lead Finder</span>
+          <span class="badge" id="sidebar-leads-badge">40k+</span>
+        </li>
+        <li class="menu-item" data-view="saved" onclick="App.switchView('saved')">
+          <span class="menu-icon">⭐</span>
+          <span class="menu-text">Saved Leads</span>
+        </li>
+
+        <li class="menu-section-label">Developer</li>
+        <li class="menu-item" data-view="apikeys" onclick="App.switchView('apikeys')">
+          <span class="menu-icon">🔑</span>
+          <span class="menu-text">API Keys</span>
+        </li>
+
+        <li class="menu-section-label">Account</li>
+        <li class="menu-item" data-view="billing" onclick="App.switchView('billing')">
+          <span class="menu-icon">💳</span>
+          <span class="menu-text">Subscription & Plan</span>
+        </li>
+        <li class="menu-item" data-view="settings" onclick="App.switchView('settings')">
+          <span class="menu-icon">⚙️</span>
+          <span class="menu-text">Settings</span>
+        </li>
+      </ul>
+
+      <!-- User Card at bottom -->
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar" id="sidebar-user-avatar">S</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-user-name">Sarah Jenkins</div>
+            <span class="user-plan-pill" id="sidebar-user-plan">Pro Tier</span>
+          </div>
+          <button class="btn-logout" id="btn-logout" title="Sign Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <!-- App Header Bar -->
+      <header class="app-header">
+        <div class="header-title-box">
+          <h2>Intelligence Overview</h2>
+          <p>Real-time metrics, active data enrichment, and usage stats.</p>
+        </div>
+
+        <div class="header-actions">
+          <div class="credits-pill">
+            <span class="bolt">⚡</span>
+            <span id="header-credits-val">4,850</span>
+            <span style="color: var(--text-dim);">Credits</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="App.switchView('leads')">
+            + Find New Leads
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: Overview Dashboard -->
+      <div id="view-overview" class="app-view active">
+        <!-- 4 Stat Metric Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Total Available Leads</span>
+              <div class="metric-icon-box metric-icon-purple">🏢</div>
+            </div>
+            <div class="metric-value" id="stat-total-leads">40,000+</div>
+            <div class="metric-footer">
+              <span class="metric-trend-up">↑ 100% verified</span>
+              <span>across 8 sectors</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Saved in Collections</span>
+              <div class="metric-icon-box metric-icon-yellow">⭐</div>
+            </div>
+            <div class="metric-value" id="stat-saved-leads">0</div>
+            <div class="metric-footer">
+              <span>Ready for outreach export</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>Credits Remaining</span>
+              <div class="metric-icon-box metric-icon-green">⚡</div>
+            </div>
+            <div class="metric-value" id="stat-credits">4,850</div>
+            <div class="metric-footer">
+              <span class="metric-trend-up">Active subscription</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>System Health</span>
+              <div class="metric-icon-box metric-icon-cyan">🛡️</div>
+            </div>
+            <div class="metric-value" style="font-size: 1.5rem; margin-top: 6px;">Operational</div>
+            <div class="metric-footer">
+              <span class="metric-trend-up">99.4% accuracy</span>
+              <span>• 127ms ping</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column Overview Grid -->
+        <div class="dashboard-grid-2">
+          <!-- Industry distribution -->
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <h3>Indexed Industry Breakdown</h3>
+              <span class="tag tag-stage">Live Seeded DB</span>
+            </div>
+            <div class="progress-list" id="industry-distribution-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Activity Audit Stream -->
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <h3>Recent Account Activity</h3>
+              <span class="tag tag-verified">Audit Log</span>
+            </div>
+            <div class="activity-feed" id="recent-activity-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Launch CTA Banner -->
+        <div class="feature-card" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(30, 41, 66, 0.9) 0%, rgba(18, 24, 39, 0.95) 100%);">
+          <div>
+            <h3 style="margin-bottom: 4px;">Ready to find your next enterprise client?</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Filter by verified decision-maker emails, tech stacks, and company revenue.</p>
+          </div>
+          <button class="btn btn-primary" onclick="App.switchView('leads')">Open Lead Finder ➔</button>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Leads Intelligence Explorer -->
+      <div id="view-leads" class="app-view">
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="lead-search-input" class="form-input" placeholder="Search company, contact name, domain, tech stack...">
+          </div>
+
+          <select id="lead-industry-filter" class="form-select filter-select">
+            <option value="all">All Industries</option>
+          </select>
+
+          <select id="lead-country-filter" class="form-select filter-select">
+            <option value="all">All Locations</option>
+          </select>
+
+          <select id="lead-employee-filter" class="form-select filter-select">
+            <option value="0">Any Team Size</option>
+            <option value="50">50+ Employees</option>
+            <option value="150">150+ Employees</option>
+            <option value="300">300+ Employees</option>
+          </select>
+
+          <select id="lead-sort-filter" class="form-select filter-select">
+            <option value="id_asc">Default Order</option>
+            <option value="employees_desc">Most Employees</option>
+            <option value="company_asc">Company (A-Z)</option>
+          </select>
+
+          <button class="btn btn-secondary btn-sm" onclick="Dashboard.resetFilters()">Reset</button>
+        </div>
+
+        <!-- Table Card -->
+        <div class="table-card">
+          <div class="table-toolbar">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="leads-found-count" style="font-weight: 600; color: var(--text-main);">Loading leads...</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button id="btn-export-selected" class="btn btn-primary btn-sm" disabled style="opacity: 0.5;" onclick="Dashboard.exportDataset('csv')">
+                📥 Export Selected (<span id="selected-export-count">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px; text-align: center;">
+                    <input type="checkbox" onchange="Dashboard.toggleSelectAll(this.checked)">
+                  </th>
+                  <th>Company & Domain</th>
+                  <th>Industry & Location</th>
+                  <th>Size & Revenue</th>
+                  <th>Decision Maker</th>
+                  <th>Tech Stack</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: Saved Leads & Collections -->
+      <div id="view-saved" class="app-view">
+        <div id="saved-leads-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- VIEW 4: Developer API Keys -->
+      <div id="view-apikeys" class="app-view">
+        <div class="dash-panel" style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+              <h3>Active Developer API Keys</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Use these tokens to query lead intelligence programmatically.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="App.openModal('new-key-modal')">+ Generate New Token</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Key Name</th>
+                  <th>API Token</th>
+                  <th>Usage / Quota</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="api-keys-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Code Snippet Integration Preview -->
+        <div class="dash-panel">
+          <h3 style="margin-bottom: 12px;">Quick Start Integration Example</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">Query leads by industry or keywords directly using cURL or Node.js:</p>
+          
+          <pre class="key-code-block"><code># 1. cURL Example
+curl -X GET "http://localhost:3000/api/leads?industry=Cybersecurity" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json"
+
+# 2. Node.js / Fetch Example
+const response = await fetch('http://localhost:3000/api/leads', {
+  headers: { 'Authorization': 'Bearer YOUR_API_TOKEN' }
+});
+const data = await response.json();
+console.log(data.leads);</code></pre>
+        </div>
+      </div>
+
+      <!-- VIEW 5: Subscription & Billing -->
+      <div id="view-billing" class="app-view">
+        <div class="dash-panel" style="margin-bottom: 30px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span class="tag tag-stage" style="margin-bottom: 8px;">Active Plan</span>
+              <h2 id="billing-current-plan" style="font-size: 1.8rem;">Pro Intelligence</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Renews automatically on a monthly schedule.</p>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Available Balance</div>
+              <div style="font-size: 2rem; font-weight: 800; color: var(--primary-light);">⚡ 4,850 Credits</div>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 20px;">Switch or Upgrade Your Subscription</h3>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3 class="plan-title">Starter</h3>
+            <p class="plan-desc">500 monthly search & export credits.</p>
+            <div class="plan-price"><span>$49</span><span class="plan-period">/ mo</span></div>
+            <button class="btn btn-secondary btn-sm btn-plan-select" data-plan="Starter" onclick="Dashboard.switchPlan('Starter')">Switch Plan</button>
+          </div>
+
+          <div class="pricing-card featured">
+            <div class="popular-tag">Current / Recommended</div>
+            <h3 class="plan-title">Pro</h3>
+            <p class="plan-desc">5,000 monthly credits + full tech stack forensics.</p>
+            <div class="plan-price"><span>$149</span><span class="plan-period">/ mo</span></div>
+            <button class="btn btn-primary btn-sm btn-plan-select" data-plan="Pro" onclick="Dashboard.switchPlan('Pro')">Switch Plan</button>
+          </div>
+
+          <div class="pricing-card">
+            <h3 class="plan-title">Enterprise</h3>
+            <p class="plan-desc">25,000 monthly credits + custom CRM webhooks.</p>
+            <div class="plan-price"><span>$499</span><span class="plan-period">/ mo</span></div>
+            <button class="btn btn-outline btn-sm btn-plan-select" data-plan="Enterprise" onclick="Dashboard.switchPlan('Enterprise')">Upgrade to Enterprise</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 6: Settings & Security -->
+      <div id="view-settings" class="app-view">
+        <div class="dash-panel" style="max-width: 650px; margin-bottom: 24px;">
+          <h3 style="margin-bottom: 16px;">Workspace & Profile Details</h3>
+          <form id="profile-form">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="settings-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address (Read-only)</label>
+              <input type="email" id="settings-email" class="form-input" disabled style="opacity: 0.6;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Company / Workspace Name</label>
+              <input type="text" id="settings-company" class="form-input">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Save Profile Changes</button>
+          </form>
+        </div>
+
+        <div class="dash-panel" style="max-width: 650px;">
+          <h3 style="margin-bottom: 8px;">Security & Sessions</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">Your session is authenticated via salted bcrypt passwords and signed JWT tokens.</p>
+          <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">Log Out of All Devices</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       MODALS
+       ======================================================================== -->
+
+  <!-- Modal 1: Auth Modal (Login / Sign Up / Instant Demo) -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="App.closeModal('auth-modal')">×</button>
+
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div class="logo-icon" style="margin: 0 auto 12px; width: 44px; height: 44px;">⚡</div>
+        <h3 style="font-size: 1.4rem;">Access DataFinder</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">Sign in or test instant demo sandbox</p>
+      </div>
+
+      <!-- Quick 1-Click Demo Button -->
+      <button class="btn btn-accent btn-instant-demo" style="width: 100%; margin-bottom: 20px;">
+        ⚡ Instant One-Click Demo (Pro Tier)
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: var(--text-dim); font-size: 0.8rem;">
+        <span style="flex-grow: 1; height: 1px; background: var(--border);"></span>
+        <span>OR ENTER CREDENTIALS</span>
+        <span style="flex-grow: 1; height: 1px; background: var(--border);"></span>
+      </div>
+
+      <!-- Tab Buttons -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="tab-btn-login" class="btn btn-primary btn-sm" style="flex: 1;">Sign In</button>
+        <button id="tab-btn-signup" class="btn btn-outline btn-sm" style="flex: 1;">Create Account</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="form-login">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="login-email" class="form-input" placeholder="e.g. demo@datafinder.io" value="demo@datafinder.io" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" value="demo123" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In to DataFinder</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="form-signup" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="signup-name" class="form-input" placeholder="Jane Doe" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Email</label>
+          <input type="email" id="signup-email" class="form-input" placeholder="jane@company.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="signup-password" class="form-input" placeholder="Minimum 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Name</label>
+          <input type="text" id="signup-company" class="form-input" placeholder="Acme Inc.">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Free Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Lead Dossier Modal -->
+  <div id="lead-dossier-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <button class="modal-close-btn" onclick="App.closeModal('lead-dossier-modal')">×</button>
+      <div id="lead-dossier-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal 3: New API Key Modal -->
+  <div id="new-key-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 440px;">
+      <button class="modal-close-btn" onclick="App.closeModal('new-key-modal')">×</button>
+      <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Create API Key</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
+        Generate an authorization token for external scripts, integrations, or automated enrichment.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Token Name / Description</label>
+        <input type="text" id="new-key-name-input" class="form-input" placeholder="e.g. Zapier Webhook or Outbound Script">
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="App.closeModal('new-key-modal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="Dashboard.createApiKey()">Generate Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="/js/auth.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
